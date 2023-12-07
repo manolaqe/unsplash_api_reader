@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:http/http.dart';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 
 void main() {
   runApp(const MyApp());
@@ -70,14 +71,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
     final Uri uri = Uri.parse('https://api.unsplash.com/photos');
 
-    final Response response = await client.get(
-        uri.replace(queryParameters: <String, String>{'page': '$_page'}),
-        headers: {
-          HttpHeaders.authorizationHeader:
-              'Client-ID LhmGVHNY9GK4bQtdRigmldamkO1VCOmvEbfEsHIk59k'
+    final Response response = await client.get(uri.replace(queryParameters: <String, String>{'page': '$_page'}),
+        headers: <String, String>{
+          HttpHeaders.authorizationHeader: 'Client-ID LhmGVHNY9GK4bQtdRigmldamkO1VCOmvEbfEsHIk59k'
         });
 
-    List<dynamic> json = jsonDecode(response.body) as List<dynamic>;
+    final List<dynamic> json = jsonDecode(response.body) as List<dynamic>;
 
     for (final dynamic item in json) {
       _photos.add(UnsplashPhoto.fromJson(item as Map<String, dynamic>));
@@ -104,30 +103,26 @@ class _MyHomePageState extends State<MyHomePage> {
           return ListView.builder(
             controller: _controller,
             itemCount: _photos.length,
-            itemBuilder: (context, index) {
+            itemBuilder: (BuildContext context, int index) {
               final UnsplashPhoto photo = _photos[index];
               return Column(
-                children: [
+                children: <Widget>[
                   Image.network(
                     photo.urls!.regular!,
-                    loadingBuilder:
-                        (BuildContext context, Widget widget, loadingProgress) {
+                    loadingBuilder: (BuildContext context, Widget widget, ImageChunkEvent? loadingProgress) {
                       if (loadingProgress == null) {
                         return widget;
                       }
 
                       return Center(
                         child: CircularProgressIndicator(
-                            value: loadingProgress.cumulativeBytesLoaded /
-                                    loadingProgress.expectedTotalBytes! ??
-                                1),
+                            value: loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!),
                       );
                     },
                   ),
                   ListTile(
                     leading: CircleAvatar(
-                      backgroundImage:
-                          NetworkImage(photo.user!.profileImage!.small),
+                      backgroundImage: NetworkImage(photo.user!.profileImage!.small),
                     ),
                     title: Text(photo.user!.name!),
                     subtitle: Text(photo.description ?? ''),
@@ -146,6 +141,23 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 class UnsplashPhoto {
+  UnsplashPhoto.fromJson(Map<String, dynamic> json)
+      : id = json['id'] as String,
+        createdAt = json['created_at'] as String,
+        updatedAt = json['updated_at'] as String,
+        width = json['width'] as int,
+        height = json['height'] as int,
+        color = json['color'] as String,
+        blurHash = json['blur_hash'] as String,
+        likes = json['likes'] as int,
+        likedByUser = json['liked_by_user'] as bool,
+        description = json['description'] as String,
+        user = User.fromJson(json['user'] as Map<String, dynamic>),
+        currentUserCollections = (json['current_user_collections'] as List<Map<String, dynamic>>)
+            .map((Map<String, dynamic> i) => Collection.fromJson(i))
+            .toList(),
+        urls = Urls.fromJson(json['urls'] as Map<String, dynamic>),
+        links = Links.fromJson(json['links'] as Map<String, dynamic>);
   final String? id;
   final String? createdAt;
   final String? updatedAt;
@@ -160,27 +172,23 @@ class UnsplashPhoto {
   final List<Collection> currentUserCollections;
   final Urls? urls;
   final Links? links;
-
-  UnsplashPhoto.fromJson(Map<String, dynamic> json)
-      : id = json['id'],
-        createdAt = json['created_at'],
-        updatedAt = json['updated_at'],
-        width = json['width'],
-        height = json['height'],
-        color = json['color'],
-        blurHash = json['blur_hash'],
-        likes = json['likes'],
-        likedByUser = json['liked_by_user'],
-        description = json['description'],
-        user = User.fromJson(json['user']),
-        currentUserCollections = (json['current_user_collections'] as List)
-            .map((i) => Collection.fromJson(i))
-            .toList(),
-        urls = Urls.fromJson(json['urls']),
-        links = Links.fromJson(json['links']);
 }
 
 class User {
+  User.fromJson(Map<String, dynamic> json)
+      : id = json['id'] as String,
+        username = json['username'] as String,
+        name = json['name'] as String,
+        portfolioUrl = json['portfolio_url'] as String,
+        bio = json['bio'] as String,
+        location = json['location'] as String,
+        totalLikes = json['total_likes'] as int,
+        totalPhotos = json['total_photos'] as int,
+        totalCollections = json['total_collections'] as int,
+        instagramUsername = json['instagram_username'] as String,
+        twitterUsername = json['twitter_username'] as String,
+        profileImage = ProfileImage.fromJson(json['profile_image'] as Map<String, dynamic>),
+        links = Links.fromJson(json['links'] as Map<String, dynamic>);
   final String? id;
   final String? username;
   final String? name;
@@ -194,50 +202,41 @@ class User {
   final String? twitterUsername;
   final ProfileImage? profileImage;
   final Links? links;
-
-  User.fromJson(Map<String, dynamic> json)
-      : id = json['id'],
-        username = json['username'],
-        name = json['name'],
-        portfolioUrl = json['portfolio_url'],
-        bio = json['bio'],
-        location = json['location'],
-        totalLikes = json['total_likes'],
-        totalPhotos = json['total_photos'],
-        totalCollections = json['total_collections'],
-        instagramUsername = json['instagram_username'],
-        twitterUsername = json['twitter_username'],
-        profileImage = ProfileImage.fromJson(json['profile_image']),
-        links = Links.fromJson(json['links']);
 }
 
 class ProfileImage {
+  ProfileImage.fromJson(Map<String, dynamic> json)
+      : small = json['small'] as String,
+        medium = json['medium'] as String,
+        large = json['large'] as String;
   final String small;
   final String medium;
   final String large;
-
-  ProfileImage.fromJson(Map<String, dynamic> json)
-      : small = json['small'],
-        medium = json['medium'],
-        large = json['large'];
 }
 
 class Links {
+  Links.fromJson(Map<String, dynamic> json)
+      : self = json['self'] as String,
+        html = json['html'] as String,
+        photos = json['photos'] as String,
+        likes = json['likes'] as String,
+        portfolio = json['portfolio'] as String;
   final String? self;
   final String? html;
   final String? photos;
   final String? likes;
   final String? portfolio;
-
-  Links.fromJson(Map<String, dynamic> json)
-      : self = json['self'],
-        html = json['html'],
-        photos = json['photos'],
-        likes = json['likes'],
-        portfolio = json['portfolio'];
 }
 
 class Collection {
+  Collection.fromJson(Map<String, dynamic> json)
+      : id = json['id'] as int,
+        title = json['title'] as String,
+        publishedAt = json['published_at'] as String,
+        lastCollectedAt = json['last_collected_at'] as String,
+        updatedAt = json['updated_at'] as String,
+        coverPhoto = json['cover_photo'],
+        user = json['user'];
   final int? id;
   final String? title;
   final String? publishedAt;
@@ -245,28 +244,18 @@ class Collection {
   final String? updatedAt;
   final dynamic coverPhoto;
   final dynamic user;
-
-  Collection.fromJson(Map<String, dynamic> json)
-      : id = json['id'],
-        title = json['title'],
-        publishedAt = json['published_at'],
-        lastCollectedAt = json['last_collected_at'],
-        updatedAt = json['updated_at'],
-        coverPhoto = json['cover_photo'],
-        user = json['user'];
 }
 
 class Urls {
+  Urls.fromJson(Map<String, dynamic> json)
+      : raw = json['raw'] as String,
+        full = json['full'] as String,
+        regular = json['regular'] as String,
+        small = json['small'] as String,
+        thumb = json['thumb'] as String;
   final String? raw;
   final String? full;
   final String? regular;
   final String? small;
   final String? thumb;
-
-  Urls.fromJson(Map<String, dynamic> json)
-      : raw = json['raw'],
-        full = json['full'],
-        regular = json['regular'],
-        small = json['small'],
-        thumb = json['thumb'];
 }
